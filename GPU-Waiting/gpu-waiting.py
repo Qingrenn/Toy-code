@@ -61,6 +61,7 @@ if __name__ == '__main__':
     task_commands = ["command 1", "command 2", "command 3"] # 待启动的任务列表
     task_index = 0
     process_list = []
+    gpu_id_list = [0, 1, 2] # 排队的显卡id， 两张显卡则为[0, 1] 
 
     t = 0
     while(t < MAX_WAITING_TIME * 60):
@@ -73,12 +74,13 @@ if __name__ == '__main__':
             record()
         # 检查
         gpu_id = check()
-        if gpu_id != -1:
+        if gpu_id in gpu_id_list:
             now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             p = Process(target=do_cmd, args=(task_commands[task_index])) # 开启新的进程
             p.start()
             process_list.append(p)
-            write_log(f'{now}: GPU {gpu_id} is free... start task{task_index} cmd:{task_commands[task_index]} name:{p.name} pid:{p.pid}')
+            # 如果启动的是shell脚本， 请自行存储训练脚本的pid
+            write_log(f'{now}: GPU {gpu_id} is free... start task{task_index} cmd:{task_commands[task_index]} name:{p.name} pid:{p.pid}') 
             task_index += 1
         # 检查频率
         time.sleep(60)

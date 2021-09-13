@@ -4,4 +4,4 @@
 
 qqemail仅仅增添了联网邮箱提示。
 
-将start.sh做为systemd service即可实现服务器卡机联网。
+将start.sh做为systemd service即可实现服务器开机联网。
