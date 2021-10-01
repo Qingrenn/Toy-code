@@ -12,7 +12,8 @@
 
 -s: 开启窗口，debug使用
 
-**依赖**
+## 依赖
+
 opencv
 
 numpy
