@@ -63,17 +63,9 @@ def record():
 可以在[YOUR SCRIPT]中添加参数解析(argparse), 解析传入的gpu_id
 
 e.g.
-
-1. 首先在主程序中向do_cmd传入id参数
-p = Process(target=do_cmd, args=(task_commands[task_index], id=gpu_id)) # 开启新的进程
-
-2. 补充id参数到命令上
-def do_cmd(cmd, **kwargs):
-    gpu_id = kwargs["id"]
-    cmd = cmd + " --gpu_id id"
-    os.system(cmd)
+p = Process(target=do_cmd, args=(task_commands[task_index] + f" --gpu_id {gpu_id}")) 
 """
-def do_cmd(cmd, **kwargs):
+def do_cmd(cmd, *args, **kwargs):
     os.system(cmd)
 
 if __name__ == '__main__':
@@ -97,6 +89,7 @@ if __name__ == '__main__':
             now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             # 创建进程，启动任务
             p = Process(target=do_cmd, args=(task_commands[task_index])) 
+            # p = Process(target=do_cmd, args=(task_commands[task_index] + f" --gpu_id {gpu_id}")) 
             p.start()
             process_list.append(p)
             write_log(f'{now}: GPU {gpu_id} is free... start task{task_index} cmd:{task_commands[task_index]} name:{p.name} pid:{p.pid}') 
