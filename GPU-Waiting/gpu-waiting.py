@@ -4,7 +4,12 @@ import time
 import re
 from multiprocessing import Process, process
 
-MAX_WAITING_TIME = 24 # hour
+# 最大等待时间 (hour)
+MAX_WAITING_TIME = 24 
+# 待启动的任务列表
+task_commands = ["command 1", "command 2", "command 3"] 
+# 排队的显卡id， 两张显卡则为[0, 1] 
+gpu_id_list = [0, 1, 2] 
 
 def write_log(writting_line, re_init=False, file_name='./waiting.log'):
     if re_init:
@@ -41,7 +46,7 @@ def gpus_info():
 def check():
     gpu_status_list = gpus_info()
     for gpu_id, status in enumerate(gpu_status_list): 
-        if status['Memory-Usage'] < 1000 and status['GPU-Util'] < 10:
+        if status['Memory-Usage'] < 1024 and status['GPU-Util'] < 10:
            return gpu_id
     else:
         return -1
@@ -53,20 +58,34 @@ def record():
     for gpu_id, status in enumerate(gpu_status_list):
         write_log('GPU:{} Memory-Usage:{} GPU-Util:{}'.format(gpu_id, status['Memory-Usage'], status['GPU-Util']))
 
-def do_cmd(cmd):
+"""
+当 cmd = "python [YOUR SCRIPT]"
+可以在[YOUR SCRIPT]中添加参数解析(argparse), 解析传入的gpu_id
+
+e.g.
+
+1. 首先在主程序中向do_cmd传入id参数
+p = Process(target=do_cmd, args=(task_commands[task_index], id=gpu_id)) # 开启新的进程
+
+2. 补充id参数到命令上
+def do_cmd(cmd, **kwargs):
+    gpu_id = kwargs["id"]
+    cmd = cmd + " --gpu_id id"
+    os.system(cmd)
+"""
+def do_cmd(cmd, **kwargs):
     os.system(cmd)
 
 if __name__ == '__main__':
-    write_log(f"current process PID: {os.getpgid()}")
-    task_commands = ["command 1", "command 2", "command 3"] # 待启动的任务列表
+    write_log(f"current process PID: {os.getpid()}")
+    
     task_index = 0
     process_list = []
-    gpu_id_list = [0, 1, 2] # 排队的显卡id， 两张显卡则为[0, 1] 
 
     t = 0
     while(t < MAX_WAITING_TIME * 60):
         if task_index == len(task_commands):
-            write_log("start all tasks ...")
+            write_log("Have started all tasks ...")
             break
         
         # 记录
@@ -76,10 +95,10 @@ if __name__ == '__main__':
         gpu_id = check()
         if gpu_id in gpu_id_list:
             now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-            p = Process(target=do_cmd, args=(task_commands[task_index])) # 开启新的进程
+            # 创建进程，启动任务
+            p = Process(target=do_cmd, args=(task_commands[task_index])) 
             p.start()
             process_list.append(p)
-            # 如果启动的是shell脚本， 请自行存储训练脚本的pid
             write_log(f'{now}: GPU {gpu_id} is free... start task{task_index} cmd:{task_commands[task_index]} name:{p.name} pid:{p.pid}') 
             task_index += 1
         # 检查频率
